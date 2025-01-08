@@ -1,0 +1,66 @@
+Output:
+
+Philosopher #1: starts thinking
+Philosopher #2: starts thinking
+Philosopher #3: starts thinking
+Philosopher #4: starts thinking
+Philosopher #5: starts thinking
+Philosopher #4: ends thinking
+Philosopher #5: ends thinking
+Philosopher #3: ends thinking
+Philosopher #1: ends thinking
+Philosopher #1: picked up chopsticks
+Philosopher #1: starts eating
+Philosopher #2: ends thinking
+Philosopher #1: ends eating
+Philosopher #1: releases chopsticks
+Philosopher #2: picked up chopsticks
+Philosopher #2: starts eating
+Philosopher #2: ends eating
+Philosopher #2: releases chopsticks
+Philosopher #3: picked up chopsticks
+Philosopher #3: starts eating
+Philosopher #3: ends eating
+Philosopher #3: releases chopsticks
+Philosopher #4: picked up chopsticks
+Philosopher #4: starts eating
+Philosopher #4: ends eating
+Philosopher #4: releases chopsticks
+Philosopher #5: picked up chopsticks
+Philosopher #5: starts eating
+Philosopher #5: ends eating
+Philosopher #5: releases chopsticks
+------------------------------------Completed dining round #1------------------------------------------------
+
+void* philosopherThread(void* arg) {
+    int index = *((int*)arg);
+    int eatCount = 0;
+
+    while (eatCount < 1) {
+        thinking(index);
+
+        pthread_mutex_lock(&turn);
+        while (nextIndex != index) {
+            pthread_cond_wait(&condVar, &turn);
+        }
+
+        pickUpChopsticks(index);
+        eating(index);
+        putDownChopsticks(index);
+        
+        nextIndex = (nextIndex + 1) % NUM_PHILOS;
+        pthread_cond_broadcast(&condVar);
+        pthread_mutex_unlock(&turn);
+
+        eatCount++;
+    }
+    return NULL;
+}
+Explanation: 
+
+I used a conditional variable (pthread_cond_t condVar) to enforce the order of eating among the philosophers. 
+The key part of the code is the philosopherThread function, which controls the behavior of each philosopher.
+In a while loop, the philosopher checks if nextIndex matches their index. If not, the philosopher calls pthread_cond_wait(&condVar, &turn),
+which atomically releases the mutex and puts the thread to sleep until it is signaled. While waiting, the mutex is unlocked, which allows other threads
+to check the condition and potentially proceed with their turn. Finally, the pthread_cond_broadcast(&condVar) 
+function wakes up all philosopher threads that are currently waiting on the conditional variable condVar.
